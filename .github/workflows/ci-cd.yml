@@ -1,47 +1,46 @@
-name: Build, Push & Deploy
+name: Build & Deploy to Railway
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main   # Trigger workflow on pushes to main branch
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1️⃣ Build Docker image
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/wisecow:latest .
+      # 2. Set up Docker Buildx (required for building images)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      # 2️⃣ Login to Docker Hub
-      - name: Docker Hub Login
+      # 3. Log in to Docker Hub
+      - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 3️⃣ Push Docker image
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/wisecow:latest
+      # 4. Build & push Docker image
+      - name: Build & push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/wisecow:latest
 
-      # 4️⃣ Install Railway CLI
-      - name: Install Railway CLI
-        run: curl -sSL https://cli.railway.app/install.sh | sh
+      # 5. Install Railway CLI & deploy
+      - name: Install & Deploy to Railway
+        run: |
+          curl -sSL https://cli.railway.app/install.sh | sh
+          export PATH=$PATH:$HOME/.railway/bin
+          railway login --apiKey ${{ secrets.RAILWAY_API_TOKEN }}
+          railway up --detach
 
-      # 5️⃣ Verify Railway CLI
-      - name: Check Railway CLI
-        run: railway --version
-
-      # 6️⃣ Login to Railway
-      - name: Railway Login
-        run: railway login --apiKey ${{ secrets.RAILWAY_API_TOKEN }}
-
-      # 7️⃣ Deploy to Railway
-      - name: Deploy to Railway
-        run: railway up --detach
 
 
 

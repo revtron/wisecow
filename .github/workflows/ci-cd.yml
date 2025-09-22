@@ -1,41 +1,42 @@
-name: Build, Push & Deploy Wisecow
+name: CI/CD - Wisecow
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main   # run workflow on commits to main
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Log in to Docker Hub
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Build and push Docker image
-      - name: Build and Push Docker Image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: revtron/wisecow:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/wisecow:latest
 
-  deploy:
+  deploy-to-railway:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Railway
         run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"image":"revtron/wisecow:latest"}' \
-            https://backboard.railway.app/api/v1/services/886cdf49-a5a3-46de-b820-b9035ad0f13a/deploy
+          curl -sL https://cli.railway.app/install.sh | sh
+          railway login --ci ${{ secrets.RAILWAY_API_TOKEN }}
+          railway up --service wisecow --detach
 
 
 

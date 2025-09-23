@@ -80,3 +80,20 @@ working link
 
 
 https://wisecow-production.up.railway.app/
+
+Script/YAML file: kubearmor-policy-wisecow.yaml (included in the repo)
+
+Enforces zero-trust restrictions for the Wisecow workload.
+
+Monitors and prevents unauthorized:
+
+File access
+
+Network calls
+
+Process execution
+
+Applied to the cluster using:
+
+kubectl apply -f kubearmor-policy-wisecow.yaml
+

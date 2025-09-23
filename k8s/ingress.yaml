@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wisecow-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"  
+spec:
+  tls:
+  - hosts:
+    - wisecow-production.up.railway.app
+    secretName: wisecow-tls
+  rules:
+  - host: wisecow-production.up.railway.app
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wisecow
+            port:
+              number: 80
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

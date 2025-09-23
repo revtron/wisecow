@@ -30,21 +30,14 @@ jobs:
 
   deploy-to-railway:
     runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
     needs: build-and-push
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: |
-          curl -sL https://cli.railway.app/install.sh | sh
-          export PATH=$PATH:$HOME/.railway/bin
-
-      - name: Railway login
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
-        run: railway login --ci $RAILWAY_API_TOKEN
 
       - name: Deploy Wisecow
         run: railway up --service wisecow --detach

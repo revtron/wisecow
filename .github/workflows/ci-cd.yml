@@ -1,24 +1,57 @@
-deploy-to-railway:
-  runs-on: ubuntu-latest
-  needs: build-and-push
+name: CI/CD Wisecow
 
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+on:
+  push:
+    branches: [ main ]
 
-    - name: Install Railway CLI
-      shell: bash
-      run: |
-        curl -sL https://cli.railway.app/install.sh | sh
-        echo "$HOME/.railway/bin" >> $GITHUB_PATH
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Railway login
-      shell: bash
-      run: railway login --ci ${{ secrets.RAILWAY_API_TOKEN }}
+      # 2. Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Deploy Wisecow
-      shell: bash
-      run: railway up --service wisecow --detach
+      # 3. Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 4. Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/wisecow:latest
+
+  deploy-to-railway:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Install Railway CLI
+      - name: Install Railway CLI
+        run: curl -sL https://cli.railway.app/install.sh | sh
+
+      # 3. Login to Railway (CI mode)
+      - name: Railway login
+        env:
+          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+        run: railway login --ci $RAILWAY_API_TOKEN
+
+      # 4. Deploy Wisecow service
+      - name: Deploy Wisecow
+        run: railway up --service wisecow --detach
 
 
 
